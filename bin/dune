@@ -1,4 +1,0 @@
-(executable
- (public_name sowork)
- (name main)
- (libraries sowork))
