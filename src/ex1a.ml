@@ -39,3 +39,5 @@ let rec file_manipulator buffer =
       file_manipulator buffer
 
 let () = file_manipulator (Bytes.create 101)
+
+let () = Unix.close stdout; Unix.close stderr; Unix.close file

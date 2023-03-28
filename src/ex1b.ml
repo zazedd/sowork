@@ -5,7 +5,7 @@ let stdout = Unix.descr_of_out_channel stdout
 let inn = read_line () |> String.trim
 
 (* file name from command line argument *)
-let file = try Unix.openfile Sys.argv.(1) [ Unix.O_WRONLY ] 0 with _ -> exit 1
+let file = try Unix.openfile Sys.argv.(1) [ Unix.O_WRONLY; Unix.O_TRUNC ] 0 with _ -> exit 1
 
 let rec split = function
   | str when String.length str = 0 -> []
@@ -33,12 +33,12 @@ let foo x =
 
 let rec encode i last_len fst_half scnd_half commands = function
   | [] -> fst_half ^ scnd_half, commands
-  | x :: xs when i < ((String.length inn) / (2 * last_len)) -> begin 
+  | x :: xs when i < ((String.length inn) / 4) -> begin 
     let x_len, trash, trash_len, read = foo x in
     let forward = "+ " ^ (string_of_int trash_len) in
     encode (i + 1) x_len (fst_half ^ x ^ trash) scnd_half (forward :: read :: commands) xs
   end
-  | x :: xs when i = ((String.length inn) / (2 * last_len)) -> begin 
+  | x :: xs when i = ((String.length inn) / 4) -> begin 
     let x_len, trash, trash_len, read = foo x in
     let endl = "f " ^ string_of_int (trash_len + x_len - 1) in (* EOF is the -1 *)
     encode (i + 1) x_len fst_half (scnd_half ^ x ^ trash) (read :: endl :: commands) xs
@@ -52,6 +52,8 @@ let rec encode i last_len fst_half scnd_half commands = function
 let result, commands = inn |> split |> invert_half 0 [] [] |> encode 0 1 "" "" [] |> (fun (a, b) -> String.to_bytes a, List.rev ("s 0" :: b))
 
 let () = 
-  Unix.write file result 0 (Bytes.length result) |> ignore;
-  List.iter (fun a -> let res = String.to_bytes (a ^ "\n") in Unix.write stdout res 0 (Bytes.length res) |> ignore) commands 
+  Unix.write file result 0 (Bytes.length result) |> ignore; 
+  List.iter (fun a -> let res = String.to_bytes (a ^ "\n") in Unix.write stdout res 0 (Bytes.length res) |> ignore) commands;
+  Unix.close file; Unix.close stdout
+
 
