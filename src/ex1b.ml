@@ -25,7 +25,7 @@ let rec random_chars = function
 
 let random_str () = let rand = Random.int 15 in random_chars rand |> List.fold_left (fun acc a -> acc ^ a) String.empty, rand
 
-let foo x = 
+let trashify x = 
     let x_len = String.length x in
     let trash, trash_len = random_str () in
     let read = "r " ^ string_of_int x_len in
@@ -34,17 +34,17 @@ let foo x =
 let rec encode i last_len fst_half scnd_half commands = function
   | [] -> fst_half ^ scnd_half, commands
   | x :: xs when i < ((String.length inn) / 4) -> begin 
-    let x_len, trash, trash_len, read = foo x in
+    let x_len, trash, trash_len, read = trashify x in
     let forward = "+ " ^ (string_of_int trash_len) in
     encode (i + 1) x_len (fst_half ^ x ^ trash) scnd_half (forward :: read :: commands) xs
   end
   | x :: xs when i = ((String.length inn) / 4) -> begin 
-    let x_len, trash, trash_len, read = foo x in
+    let x_len, trash, trash_len, read = trashify x in
     let endl = "f " ^ string_of_int (trash_len + x_len - 1) in (* EOF is the -1 *)
     encode (i + 1) x_len fst_half (scnd_half ^ x ^ trash) (read :: endl :: commands) xs
   end
   | x :: xs -> begin 
-    let x_len, trash, trash_len, read = foo x in
+    let x_len, trash, trash_len, read = trashify x in
     let endl = "- " ^ string_of_int (trash_len + x_len + last_len) in
     encode (i + 1) x_len fst_half (x ^ trash ^ scnd_half) (read :: endl :: commands) xs
   end
