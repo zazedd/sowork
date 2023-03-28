@@ -1,4 +1,4 @@
-(* stding low-level *)
+(* std low-level *)
 let stdout, stderr =
   (Unix.descr_of_out_channel stdout, Unix.descr_of_out_channel stderr)
 

@@ -1,4 +1,8 @@
 let () = Random.init (48708 + 47711)
+(* std low-level *)
+(* let stdout, stderr = *)
+(*   (Unix.descr_of_out_channel stdout, Unix.descr_of_out_channel stderr) *)
+
 let inn = read_line () |> String.trim
 
 let rec split = function
