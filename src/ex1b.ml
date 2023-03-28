@@ -1,9 +1,11 @@
 let () = Random.init (48708 + 47711)
 (* std low-level *)
-(* let stdout, stderr = *)
-(*   (Unix.descr_of_out_channel stdout, Unix.descr_of_out_channel stderr) *)
+let stdout = Unix.descr_of_out_channel stdout
 
 let inn = read_line () |> String.trim
+
+(* file name from command line argument *)
+let file = try Unix.openfile Sys.argv.(1) [ Unix.O_WRONLY ] 0 with _ -> exit 1
 
 let rec split = function
   | str when String.length str = 0 -> []
@@ -23,33 +25,33 @@ let rec random_chars = function
 
 let random_str () = let rand = Random.int 15 in random_chars rand |> List.fold_left (fun acc a -> acc ^ a) String.empty, rand
 
-let rec encode i last fst_half scnd_half commands = function
+let foo x = 
+    let x_len = String.length x in
+    let trash, trash_len = random_str () in
+    let read = "r " ^ string_of_int x_len in
+    x_len, trash, trash_len, read
+
+let rec encode i last_len fst_half scnd_half commands = function
   | [] -> fst_half ^ scnd_half, commands
-  | x :: xs when i < ((String.length inn) / 4) -> begin 
-    let xlen = String.length x in
-    let trash, tr_len = random_str () in
-    let forward = "+ " ^ string_of_int tr_len in
-    let read = "r " ^ string_of_int xlen in
-    encode (i + 1) xlen (fst_half ^ x ^ trash) scnd_half (forward :: read :: commands) xs
+  | x :: xs when i < ((String.length inn) / (2 * last_len)) -> begin 
+    let x_len, trash, trash_len, read = foo x in
+    let forward = "+ " ^ (string_of_int trash_len) in
+    encode (i + 1) x_len (fst_half ^ x ^ trash) scnd_half (forward :: read :: commands) xs
   end
-  | x :: xs when i = ((String.length inn) / 4) -> begin 
-    let xlen = String.length x in
-    let trash, tr_len = random_str () in
-    let endl = "f " ^ string_of_int (tr_len + xlen) in
-    let read = "r " ^ string_of_int xlen in
-    encode (i + 1) xlen fst_half (scnd_half ^ x ^ trash) (read :: endl :: commands) xs
+  | x :: xs when i = ((String.length inn) / (2 * last_len)) -> begin 
+    let x_len, trash, trash_len, read = foo x in
+    let endl = "f " ^ string_of_int (trash_len + x_len - 1) in (* EOF is the -1 *)
+    encode (i + 1) x_len fst_half (scnd_half ^ x ^ trash) (read :: endl :: commands) xs
   end
   | x :: xs -> begin 
-    let xlen = String.length x in
-    let trash, tr_len = random_str () in
-    let endl = "- " ^ string_of_int (tr_len + xlen + last) in
-    let read = "r " ^ string_of_int xlen in
-    Printf.printf "%s\n" (endl ^ read);
-    encode (i + 1) xlen fst_half (x ^ trash ^ scnd_half) (read :: endl :: commands) xs
+    let x_len, trash, trash_len, read = foo x in
+    let endl = "- " ^ string_of_int (trash_len + x_len + last_len) in
+    encode (i + 1) x_len fst_half (x ^ trash ^ scnd_half) (read :: endl :: commands) xs
   end
 
-let result, commands = inn |> split |> invert_half 0 [] [] |> encode 0 0 "" "" [] |> (fun (a, b) -> a, List.rev ("s 0" :: b))
+let result, commands = inn |> split |> invert_half 0 [] [] |> encode 0 1 "" "" [] |> (fun (a, b) -> String.to_bytes a, List.rev ("s 0" :: b))
 
-let () = print_endline result; 
-         List.iter (fun a -> print_endline a) commands 
+let () = 
+  Unix.write file result 0 (Bytes.length result) |> ignore;
+  List.iter (fun a -> let res = String.to_bytes (a ^ "\n") in Unix.write stdout res 0 (Bytes.length res) |> ignore) commands 
 
