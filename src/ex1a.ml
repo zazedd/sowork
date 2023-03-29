@@ -1,4 +1,4 @@
-(* stding low-level *)
+(* std low-level *)
 let stdout, stderr =
   (Unix.descr_of_out_channel stdout, Unix.descr_of_out_channel stderr)
 
@@ -44,3 +44,8 @@ let rec file_manipulator buffer fsize =
       file_manipulator buffer fsize
 
 let () = file_manipulator (Bytes.create 101) 0
+
+let () =
+  Unix.close stdout;
+  Unix.close stderr;
+  Unix.close file
