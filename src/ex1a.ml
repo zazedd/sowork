@@ -21,8 +21,8 @@ let rec file_manipulator buffer fsize =
       Unix.lseek file (int_of_string n) Unix.SEEK_CUR |> ignore;
       file_manipulator buffer fsize
   | [ "f"; n ] ->
-      (* Relative to the end | n + 1 because of EOF *)
-      Unix.lseek file ((int_of_string n + 1) * -1) Unix.SEEK_END |> ignore;
+      (* Relative to the end | * -1 because the input will be positive and we want to walk backwards *)
+      Unix.lseek file (int_of_string n * -1) Unix.SEEK_END |> ignore;
       file_manipulator buffer fsize
   | [ "r"; n ] ->
       let n = int_of_string n in
