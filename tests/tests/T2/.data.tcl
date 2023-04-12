@@ -1,9 +1,0 @@
-set        Fatal {}
-set      Warning {}
-set         args /home/mooshak/crocker/test2.bin
-set        input input
-set       output output
-set      context context
-set       Points {}
-set     Feedback {}
-set         Show yes

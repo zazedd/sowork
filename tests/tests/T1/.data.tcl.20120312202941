@@ -1,9 +1,0 @@
-set        Fatal {}
-set      Warning {}
-set         args /home/mooshak/data/contests/SO2012/problems/PB/test1.bin
-set        input input
-set       output output
-set      context context
-set       Points {}
-set     Feedback {}
-set         Show yes
