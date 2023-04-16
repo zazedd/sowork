@@ -1,3 +1,9 @@
+(**
+AUTHORS:
+- Francisco Santos, 47711
+- Leonardo Santos, 48708
+*)
+
 (* std low-level *)
 let stdout, stderr =
   (Unix.descr_of_out_channel stdout, Unix.descr_of_out_channel stderr)
