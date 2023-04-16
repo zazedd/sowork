@@ -1,3 +1,9 @@
+(**
+AUTHORS:
+- Francisco Santos, 47711
+- Leonardo Santos, 48708
+*)
+
 let () = Random.init (48708 + 47711)
 
 (* std low-level *)
@@ -9,6 +15,7 @@ let file =
   try Unix.openfile Sys.argv.(1) [ Unix.O_WRONLY; Unix.O_TRUNC ] 0
   with _ -> exit 1
 
+(* splits the string into multiple tokens *)
 let rec split = function
   | str when String.length str = 0 -> []
   | str when String.length str mod 2 = 0 ->
@@ -16,6 +23,7 @@ let rec split = function
   | str ->
       String.sub str 0 1 :: split (String.sub str 1 (String.length str - 1))
 
+(* inverts the latter half of the token list *)
 let rec invert_half i acc1 acc2 = function
   | [] -> List.rev_append acc1 (acc2 |> List.rev)
   | x :: xs when i < String.length inn / 4 ->
@@ -38,6 +46,7 @@ let trashify x =
   let read = "r " ^ string_of_int x_len in
   (x_len, trash, trash_len, read)
 
+(* encodes the string and keeps track of the operations part A would need to do to decode it *)
 let rec encode i last_len fst_half scnd_half commands = function
   | [] -> (fst_half ^ scnd_half, commands)
   | x :: xs when i < String.length inn / 4 ->
