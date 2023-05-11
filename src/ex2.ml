@@ -24,21 +24,26 @@ let rec wait_for_processes = function
       wait () |> ignore;
       wait_for_processes (n - 1)
 
+let rec read_write_loop rd wr buf =
+  let n = read rd buf 0 1024 in
+  let token = (buf |> Bytes.to_string |> int_of_string) + 1 in
+  let token_bytes = token |> string_of_int |> Bytes.of_string in
+  match token > max with
+  | true -> ()
+  | false ->
+      write wr token_bytes 0 n |> ignore;
+      read_write_loop rd wr buf
+
 let rec make_processes pipes = function
   | 0 -> ()
   | m -> (
       match fork () with
-      | 0 -> (
+      | 0 ->
           (* Child process *)
           let rd = List.nth pipes (m - 2) in
           let wr = List.nth pipes (m - 1) in
           let buf = Bytes.create 1024 in
-          let n = read rd buf 0 1024 in
-          let token = (buf |> Bytes.to_string |> int_of_string) + 1 in
-          let token_bytes = token |> string_of_int |> Bytes.of_string in
-          match token > max with
-          | true -> ()
-          | false -> write wr token_bytes 0 n |> ignore)
+          read_write_loop rd wr buf
       | _ ->
           (* Parent process *)
           (* let first_pipe = List.nth pipes 0 in *)
