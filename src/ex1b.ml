@@ -4,11 +4,13 @@ AUTHORS:
 - Leonardo Santos, 48708
 *)
 
-let () = Random.init (48708 + 47711)
+let () = Random.init (48708 + 48711)
 
 (* std low-level *)
 let stdout = Unix.descr_of_out_channel stdout
 let inn = read_line () |> String.trim
+
+let () = print_string inn
 
 (* file name from command line argument *)
 let file =
@@ -59,7 +61,7 @@ let rec encode i last_len fst_half scnd_half commands = function
         xs
   | x :: xs when i = String.length inn / 4 ->
       let x_len, trash, trash_len, read = trashify x in
-      let endl = "f " ^ string_of_int (trash_len + x_len - 1) in
+      let endl = "f " ^ string_of_int (trash_len + x_len) in
       (* EOF is the -1 *)
       encode (i + 1) x_len fst_half
         (scnd_half ^ x ^ trash)
