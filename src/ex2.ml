@@ -9,13 +9,13 @@ let n = Sys.argv.(1) |> int_of_string
 let max = Sys.argv.(4) |> int_of_string
 let pid_father = getpid ()
 
-let rec read_block f buf size =
-  let n = read f buf 0 size in
-  if n > 0 then n else read_block f buf size
+let read_block rd buf len =
+  let n = read rd buf 0 len in
+  match n with 0 -> None | b -> Some b
 
 let rec make_pipes = function
   | 1 ->
-      let str = Format.sprintf "/tmp/pipe1to%d" n in
+      let str = Format.sprintf "/tmp/pipe%dto1" n in
       mkfifo str perm;
       [ openfile str [ O_RDWR ] 0 ]
   | m ->
@@ -23,32 +23,31 @@ let rec make_pipes = function
       mkfifo str perm;
       openfile str [ O_RDWR ] 0 :: make_pipes (m - 1)
 
-let rec wait_for_processes = function
-  | 0 -> ()
-  | n ->
-      wait () |> ignore;
-      wait_for_processes (n - 1)
-
 let rec read_write_loop rd wr buf mm =
+  sleep 3;
   let n = read_block rd buf (Bytes.length buf) in
-  let buf = Bytes.sub buf 0 n in
-  let s = buf |> Bytes.to_string in
-  Format.printf "[mm:%d:%s]\n@." mm s;
-  let token = (s |> int_of_string) + 1 in
-  let token_bytes = token |> string_of_int |> Bytes.of_string in
-  match token > max with
-  | true -> ()
-  | false ->
-      write wr token_bytes 0 n |> ignore;
-      read_write_loop rd wr (Bytes.create 1024) mm
+  match n with
+  | None -> read_write_loop rd wr buf mm
+  | Some b -> (
+      let buf = Bytes.sub buf 0 b in
+      let s = buf |> Bytes.to_string in
+      Format.printf "[mm:%d:%s]\n@." mm s;
+      let token = (s |> int_of_string) + 1 in
+      let token_bytes = token |> string_of_int |> Bytes.of_string in
+      match token > max with
+      | true -> exit 0
+      | false ->
+          write wr token_bytes 0 b |> ignore;
+          read_write_loop rd wr (Bytes.create 1024) mm)
 
-let rec make_processes pipes = function
-  | 0 -> ()
-  | 1 -> (
-      match fork () with
+let rec make_processes pipes n = function
+  | i when i = n -> ()
+  | 0 -> (
+      let pid = fork () in
+      match pid with
       | 0 ->
           (* Child process *)
-          Format.printf "[m:%d]\n@." 1;
+          Format.printf "[m:%d]\n@." 0;
           let rd = List.nth pipes (n - 1) in
           let wr = List.nth pipes 0 in
           let buf = Bytes.create 1024 in
@@ -56,31 +55,64 @@ let rec make_processes pipes = function
       | _ ->
           (* Parent process *)
           (* let first_pipe = List.nth pipes 0 in *)
-          let buf = Bytes.of_string "0" in
-          write stdout buf 0 (Bytes.length buf) |> ignore;
-          make_processes pipes 0;
-          wait_for_processes 0)
-  | m -> (
-      match fork () with
+          print_endline "yo we just started";
+          make_processes pipes n 1)
+  | i -> (
+      let pid = fork () in
+      match pid with
       | 0 ->
           (* Child process *)
-          Format.printf "[m:%d]\n@." m;
-          let rd = List.nth pipes (m - 2) in
-          let wr = List.nth pipes (m - 1) in
+          Format.printf "[m:%d]\n@." i;
+          let rd = List.nth pipes (i - 1) in
+          let wr = List.nth pipes i in
           let buf = Bytes.create 1024 in
-          read_write_loop rd wr buf m
+          read_write_loop rd wr buf i
       | _ ->
           (* Parent process *)
           (* let first_pipe = List.nth pipes 0 in *)
           (* let buf = Bytes.of_string "0" in *)
           (* write stdout buf 0 (Bytes.length buf) |> ignore; *)
-          make_processes pipes (m - 1))
+          Format.printf "made process %d" i;
+          make_processes pipes n (i + 1))
 
 let pipes = make_pipes n
-let () = make_processes pipes n
+let () = make_processes pipes n 0
 
 let () =
-  if pid_father = getpid () then (
+  if pid_father = getpid () then
     let buf = Bytes.of_string "0" in
-    write (List.hd pipes) buf 0 (Bytes.length buf) |> ignore;
-    wait_for_processes n)
+    write (List.hd pipes) buf 0 (Bytes.length buf) |> ignore
+
+(* let rec make_processes pipes n = function *)
+(*   | 0 -> () *)
+(*   | 1 -> ( *)
+(*       let pid = fork () in *)
+(*       match pid with *)
+(*       | 0 -> *)
+(*           (* Child process *) *)
+(*           Format.printf "[m:%d]\n@." 1; *)
+(*           let rd = List.nth pipes (n - 1) in *)
+(*           let wr = List.nth pipes 0 in *)
+(*           let buf = Bytes.create 1024 in *)
+(*           read_write_loop rd wr buf 1 *)
+(*       | _ -> *)
+(*           (* Parent process *) *)
+(*           (* let first_pipe = List.nth pipes 0 in *) *)
+(*           print_endline "yo i reached the end of this shit"; *)
+(*           make_processes pipes 0) *)
+(*   | m -> ( *)
+(*       let pid = fork () in *)
+(*       match pid with *)
+(*       | 0 -> *)
+(*           (* Child process *) *)
+(*           Format.printf "[m:%d]\n@." m; *)
+(*           let rd = List.nth pipes (m - 2) in *)
+(*           let wr = List.nth pipes (m - 1) in *)
+(*           let buf = Bytes.create 1024 in *)
+(*           read_write_loop rd wr buf m *)
+(*       | _ -> *)
+(*           (* Parent process *) *)
+(*           (* let first_pipe = List.nth pipes 0 in *) *)
+(*           (* let buf = Bytes.of_string "0" in *) *)
+(*           (* write stdout buf 0 (Bytes.length buf) |> ignore; *) *)
+(*           make_processes pipes (m - 1)) *)
