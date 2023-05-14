@@ -33,7 +33,7 @@ let rec read_write_loop rd wr buf mm =
       let s = buf |> Bytes.to_string in
       match s with
       | "e" ->
-          print_endline "Got exit message, sending exit message, leaving@.";
+          Format.printf "Got exit message, sending exit message, leaving@.";
           write_substring wr "e" 0 b |> ignore;
           exit 0 (* Exit because exit message recieved*)
       | _ -> (
@@ -42,7 +42,7 @@ let rec read_write_loop rd wr buf mm =
           let token_bytes = token |> string_of_int |> Bytes.of_string in
           match token > max with
           | true ->
-              print_endline "End reached, sending error message, leaving@.";
+              Format.printf "End reached, sending error message, leaving@.";
               write_substring wr "e" 0 b |> ignore;
               exit 0 (* Send exit message and exit process *)
           | false ->
@@ -63,7 +63,7 @@ let rec make_processes pipes n = function
           read_write_loop rd wr buf 1
       | _ ->
           (* Parent process *)
-          print_endline "yo we just started@.";
+          Format.printf "yo we just started@.";
           make_processes pipes n 1)
   | i -> (
       let pid = fork () in
