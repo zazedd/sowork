@@ -42,7 +42,7 @@ let rec read_write_loop rd wr buf mm =
           let token_bytes = token |> string_of_int |> Bytes.of_string in
           match token > max with
           | true ->
-              Format.printf "End reached, sending error message, leaving@.";
+              Format.printf "End reached, sending exit message, leaving@.";
               write_substring wr "e" 0 b |> ignore;
               exit 0 (* Send exit message and exit process *)
           | false ->
