@@ -9,11 +9,6 @@ let n = Sys.argv.(1) |> int_of_string
 let max = Sys.argv.(4) |> int_of_string
 let pid_father = getpid ()
 
-let read_block rd buf len =
-  sleep 2;
-  let n = read rd buf 0 len in
-  match n with 0 -> None | b -> Some b
-
 let rec make_pipes = function
   | 1 ->
       let str = Format.sprintf "/tmp/pipe%dto1" n in
@@ -23,6 +18,11 @@ let rec make_pipes = function
       let str = Format.sprintf "/tmp/pipe%dto%d" (m - 1) m in
       mkfifo str perm;
       openfile str [ O_RDWR ] 0 :: make_pipes (m - 1)
+
+let read_block rd buf len =
+  sleep 2;
+  let n = read rd buf 0 len in
+  match n with 0 -> None | b -> Some b
 
 let rec read_write_loop rd wr buf mm =
   let n = read_block rd buf (Bytes.length buf) in
