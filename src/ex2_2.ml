@@ -64,7 +64,8 @@ let rec read_write_loop rd wr buf mm =
               match Unix.time () -. time_start > timeout with
               | true ->
                   Format.printf
-                    "Timeout exceeded, sending exit message, leaving@.";
+                    "[p%d] Timeout exceeded on token (val = %d), leaving\n@." mm
+                    token;
                   let s = "e" |> Bytes.of_string in
                   write wr s 0 (Bytes.length s) |> ignore;
                   exit 0 (* Send exit message and exit process *)
