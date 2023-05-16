@@ -3,8 +3,9 @@ open Unix
 let () = Printexc.record_backtrace true
 let perm = 0o640
 let n = Sys.argv.(1) |> int_of_string
-let t = Sys.argv.(2) |> float_of_string
-let max = Sys.argv.(3) |> int_of_string
+let p = Sys.argv.(2) |> float_of_string
+let t = Sys.argv.(3) |> float_of_string
+let timeout = Sys.argv.(4) |> int_of_string
 let pid_father = getpid ()
 let exit_file = openfile "exit.txt" [ O_CREAT; O_RDWR ] 0
 let buf = Bytes.of_string "0"
