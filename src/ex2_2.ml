@@ -1,6 +1,5 @@
 open Unix
 
-let () = Printexc.record_backtrace true
 let perm = 0o640
 let n = Sys.argv.(1) |> int_of_string
 let p = Sys.argv.(2) |> float_of_string
@@ -30,13 +29,11 @@ let rec read_write_loop rd wr buf mm =
   let should_exit = Bytes.create 1 in
   let _ = lseek exit_file 0 SEEK_SET in
   let _ = read exit_file should_exit 0 1 in
-  Format.printf "\n[[%s: %d]]\n@." (should_exit |> Bytes.to_string) mm;
   match should_exit |> Bytes.to_string with
   | "1" ->
-      Format.printf "Getta %d\n@." mm;
+      Format.printf "[p%d] Leaving\n@." mm;
       exit 1
   | "0" | _ -> (
-      Format.printf "%s\n@." (should_exit |> Bytes.to_string);
       let n = read_block rd buf (Bytes.length buf) in
       match n with
       | None -> read_write_loop rd wr buf mm
@@ -45,16 +42,20 @@ let rec read_write_loop rd wr buf mm =
           let s = buf |> Bytes.to_string in
           match s with
           | "e" ->
-              Format.printf "Got exit message, sending exit message, leaving@.";
+              Format.printf "[p%d] Leaving\n@." mm;
               let s = "e" |> Bytes.of_string in
               write wr s 0 (Bytes.length s) |> ignore;
               exit 0 (* Exit because exit message recieved*)
           | _ -> (
               let () = Random.self_init () in
               let rand_num = Random.float 1.0 in
+              let token = (s |> int_of_string) + 1 in
               let () =
                 if rand_num < p then
-                  let () = Format.printf "Blocking process %d\n@." mm in
+                  let () =
+                    Format.printf "[p%d] blocked on token (val = %d)\n@." mm
+                      token
+                  in
                   sleepf t
                 else ()
               in
