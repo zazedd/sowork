@@ -5,7 +5,8 @@ let perm = 0o640
 let n = Sys.argv.(1) |> int_of_string
 let p = Sys.argv.(2) |> float_of_string
 let t = Sys.argv.(3) |> float_of_string
-let timeout = Sys.argv.(4) |> int_of_string
+let timeout = Sys.argv.(4) |> float_of_string
+let time_start = Unix.time ()
 let pid_father = getpid ()
 let exit_file = openfile "exit.txt" [ O_CREAT; O_RDWR ] 0
 let buf = Bytes.of_string "0"
@@ -60,9 +61,10 @@ let rec read_write_loop rd wr buf mm =
               Format.printf "[Process:%d;Value:%s]\n@." mm s;
               let token = (s |> int_of_string) + 1 in
               let token_bytes = token |> string_of_int |> Bytes.of_string in
-              match token > max with
+              match Unix.time () -. time_start > timeout with
               | true ->
-                  Format.printf "End reached, sending exit message, leaving@.";
+                  Format.printf
+                    "Timeout exceeded, sending exit message, leaving@.";
                   let s = "e" |> Bytes.of_string in
                   write wr s 0 (Bytes.length s) |> ignore;
                   exit 0 (* Send exit message and exit process *)
