@@ -3,9 +3,8 @@ open Unix
 let () = Printexc.record_backtrace true
 let perm = 0o640
 let n = Sys.argv.(1) |> int_of_string
-let p = Sys.argv.(2) |> float_of_string
-let t = Sys.argv.(3) |> float_of_string
-let max = Sys.argv.(4) |> int_of_string
+let t = Sys.argv.(2) |> float_of_string
+let max = Sys.argv.(3) |> int_of_string
 let pid_father = getpid ()
 let exit_file = openfile "exit.txt" [ O_CREAT; O_RDWR ] 0
 let buf = Bytes.of_string "0"
@@ -101,9 +100,8 @@ let () =
   if pid_father = getpid () then (
     let pipes = make_pipes n in
     let () = make_processes pipes n 0 in
-    let buf = Bytes.of_string "1" in
     write (List.hd pipes) buf 0 (Bytes.length buf) |> ignore;
     let _ = lseek exit_file 0 SEEK_SET in
-    write exit_file buf 0 (Bytes.length buf) |> ignore;
+    wait () |> ignore;
     wait () |> ignore;
     close exit_file)
