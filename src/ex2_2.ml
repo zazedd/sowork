@@ -59,7 +59,6 @@ let rec read_write_loop rd wr buf mm =
                   sleepf t
                 else ()
               in
-              Format.printf "[Process:%d;Value:%s]\n@." mm s;
               let token = (s |> int_of_string) + 1 in
               let token_bytes = token |> string_of_int |> Bytes.of_string in
               match Unix.time () -. time_start > timeout with
