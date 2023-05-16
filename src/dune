@@ -1,3 +1,3 @@
 (executables
- (names ex1a ex1b ex2)
+ (names ex1a ex1b ex2 ex2_2)
  (libraries sowork unix))
