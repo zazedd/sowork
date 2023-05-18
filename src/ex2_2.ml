@@ -37,41 +37,41 @@ let rec read_write_loop rd wr buf mm =
       let n = read_block rd buf (Bytes.length buf) in
       match n with
       | None -> read_write_loop rd wr buf mm
-      | Some b -> (
-          let buf = Bytes.sub buf 0 b in
-          let s = buf |> Bytes.to_string in
-          match s with
-          | "e" ->
-              Format.printf "[p%d] Leaving\n@." mm;
-              let s = "e" |> Bytes.of_string in
-              write wr s 0 (Bytes.length s) |> ignore;
-              exit 0 (* Exit because exit message recieved*)
-          | _ -> (
-              let () = Random.self_init () in
-              let rand_num = Random.float 1.0 in
-              let token = (s |> int_of_string) + 1 in
-              let () =
-                if rand_num < p then
-                  let () =
-                    Format.printf "[p%d] blocked on token (val = %d)\n@." mm
-                      token
-                  in
-                  sleepf t
-                else ()
-              in
-              let token = (s |> int_of_string) + 1 in
-              let token_bytes = token |> string_of_int |> Bytes.of_string in
-              match Unix.time () -. time_start > timeout with
-              | true ->
-                  Format.printf
-                    "[p%d] Timeout exceeded on token (val = %d), leaving\n@." mm
-                    token;
-                  let s = "e" |> Bytes.of_string in
-                  write wr s 0 (Bytes.length s) |> ignore;
-                  exit 0 (* Send exit message and exit process *)
-              | false ->
-                  write wr token_bytes 0 (Bytes.length token_bytes) |> ignore;
-                  read_write_loop rd wr (Bytes.create 1024) mm)))
+      | Some b -> handle_read_block rd wr buf mm b)
+
+and handle_read_block rd wr buf mm b =
+  let buf = Bytes.sub buf 0 b in
+  let s = buf |> Bytes.to_string in
+  match s with
+  | "e" ->
+      Format.printf "[p%d] Leaving\n@." mm;
+      let s = "e" |> Bytes.of_string in
+      write wr s 0 (Bytes.length s) |> ignore;
+      exit 0 (* Exit because exit message recieved*)
+  | _ -> (
+      let () = Random.self_init () in
+      let rand_num = Random.float 1.0 in
+      let token = (s |> int_of_string) + 1 in
+      let () =
+        if rand_num < p then
+          let () =
+            Format.printf "[p%d] blocked on token (val = %d)\n@." mm token
+          in
+          sleepf t
+        else ()
+      in
+      let token = (s |> int_of_string) + 1 in
+      let token_bytes = token |> string_of_int |> Bytes.of_string in
+      match Unix.time () -. time_start > timeout with
+      | true ->
+          Format.printf
+            "[p%d] Timeout exceeded on token (val = %d), leaving\n@." mm token;
+          let s = "e" |> Bytes.of_string in
+          write wr s 0 (Bytes.length s) |> ignore;
+          exit 0 (* Send exit message and exit process *)
+      | false ->
+          write wr token_bytes 0 (Bytes.length token_bytes) |> ignore;
+          read_write_loop rd wr (Bytes.create 1024) mm)
 
 let rec make_processes pipes n = function
   | i when i = n -> ()

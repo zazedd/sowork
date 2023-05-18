@@ -35,27 +35,29 @@ let rec read_write_loop rd wr buf mm =
           let s = "e" |> Bytes.of_string in
           write wr s 0 (Bytes.length s) |> ignore;
           exit 0 (* Exit because exit message recieved*)
-      | _ -> (
-          let () = Random.self_init () in
-          let rand_num = Random.float 1.0 in
-          let () =
-            if rand_num < p then
-              let () = Format.printf "Blocking process %d\n@." mm in
-              sleepf t
-            else ()
-          in
-          Format.printf "[Process:%d;Value:%s]\n@." mm s;
-          let token = (s |> int_of_string) + 1 in
-          let token_bytes = token |> string_of_int |> Bytes.of_string in
-          match token > max with
-          | true ->
-              Format.printf "End reached, sending exit message, leaving@.";
-              let s = "e" |> Bytes.of_string in
-              write wr s 0 (Bytes.length s) |> ignore;
-              exit 0 (* Send exit message and exit process *)
-          | false ->
-              write wr token_bytes 0 (Bytes.length token_bytes) |> ignore;
-              read_write_loop rd wr (Bytes.create 1024) mm))
+      | _ -> handle_read_block rd wr mm s)
+
+and handle_read_block rd wr mm s =
+  let () = Random.self_init () in
+  let rand_num = Random.float 1.0 in
+  let () =
+    if rand_num < p then
+      let () = Format.printf "Blocking process %d\n@." mm in
+      sleepf t
+    else ()
+  in
+  Format.printf "[Process:%d;Value:%s]\n@." mm s;
+  let token = (s |> int_of_string) + 1 in
+  let token_bytes = token |> string_of_int |> Bytes.of_string in
+  match token > max with
+  | true ->
+      Format.printf "End reached, sending exit message, leaving@.";
+      let s = "e" |> Bytes.of_string in
+      write wr s 0 (Bytes.length s) |> ignore;
+      exit 0 (* Send exit message and exit process *)
+  | false ->
+      write wr token_bytes 0 (Bytes.length token_bytes) |> ignore;
+      read_write_loop rd wr (Bytes.create 1024) mm
 
 let rec make_processes pipes n = function
   | i when i = n -> ()
