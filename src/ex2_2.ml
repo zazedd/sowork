@@ -32,6 +32,7 @@ let rec read_write_loop rd wr buf mm =
   match should_exit |> Bytes.to_string with
   | "1" ->
       Format.printf "[p%d] Leaving\n@." mm;
+      close rd;
       exit 1
   | "0" | _ -> (
       let n = read_block rd buf (Bytes.length buf) in
@@ -47,6 +48,7 @@ and handle_read_block rd wr buf mm b =
       Format.printf "[p%d] Leaving\n@." mm;
       let s = "e" |> Bytes.of_string in
       write wr s 0 (Bytes.length s) |> ignore;
+      close rd;
       exit 0 (* Exit because exit message recieved*)
   | _ -> (
       let () = Random.self_init () in
@@ -68,6 +70,7 @@ and handle_read_block rd wr buf mm b =
             "[p%d] Timeout exceeded on token (val = %d), leaving\n@." mm token;
           let s = "e" |> Bytes.of_string in
           write wr s 0 (Bytes.length s) |> ignore;
+          close rd;
           exit 0 (* Send exit message and exit process *)
       | false ->
           write wr token_bytes 0 (Bytes.length token_bytes) |> ignore;

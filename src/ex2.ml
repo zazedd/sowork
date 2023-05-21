@@ -34,6 +34,7 @@ let rec read_write_loop rd wr buf mm =
           Format.printf "Got exit message, sending exit message, leaving@.";
           let s = "e" |> Bytes.of_string in
           write wr s 0 (Bytes.length s) |> ignore;
+          close rd;
           exit 0 (* Exit because exit message recieved*)
       | _ -> handle_read_block rd wr mm s)
 
@@ -54,6 +55,7 @@ and handle_read_block rd wr mm s =
       Format.printf "End reached, sending exit message, leaving@.";
       let s = "e" |> Bytes.of_string in
       write wr s 0 (Bytes.length s) |> ignore;
+      close rd;
       exit 0 (* Send exit message and exit process *)
   | false ->
       write wr token_bytes 0 (Bytes.length token_bytes) |> ignore;
@@ -90,6 +92,6 @@ let () =
   if pid_father = getpid () then (
     let pipes = make_pipes n in
     let () = make_processes pipes n 0 in
-    let buf = Bytes.of_string "1" in
+    let buf = Bytes.of_string "0" in
     write (List.hd pipes) buf 0 (Bytes.length buf) |> ignore;
     wait () |> ignore)
