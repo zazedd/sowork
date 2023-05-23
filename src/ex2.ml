@@ -88,10 +88,20 @@ let rec make_processes pipes n = function
           (* Parent process *)
           make_processes pipes n (i + 1))
 
+let rec cleanup = function
+  | 1 ->
+      let str = Format.sprintf "/tmp/pipe%dto1" n in
+      Unix.unlink str
+  | m ->
+      let str = Format.sprintf "/tmp/pipe%dto%d" (m - 1) m in
+      Unix.unlink str;
+      cleanup (m - 1)
+
 let () =
   if pid_father = getpid () then (
     let pipes = make_pipes n in
     let () = make_processes pipes n 0 in
     let buf = Bytes.of_string "0" in
     write (List.hd pipes) buf 0 (Bytes.length buf) |> ignore;
-    wait () |> ignore)
+    wait () |> ignore;
+    cleanup n)

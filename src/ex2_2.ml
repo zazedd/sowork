@@ -103,6 +103,15 @@ let rec make_processes pipes n = function
           (* Parent process *)
           make_processes pipes n (i + 1))
 
+let rec cleanup = function
+  | 1 ->
+      let str = Format.sprintf "/tmp/pipe%dto1" n in
+      Unix.unlink str
+  | m ->
+      let str = Format.sprintf "/tmp/pipe%dto%d" (m - 1) m in
+      Unix.unlink str;
+      cleanup (m - 1)
+
 let () =
   if pid_father = getpid () then (
     let pipes = make_pipes n in
@@ -111,4 +120,6 @@ let () =
     let _ = lseek exit_file 0 SEEK_SET in
     wait () |> ignore;
     wait () |> ignore;
+    cleanup n;
+    Unix.unlink "exit.txt";
     close exit_file)
